@@ -29,7 +29,9 @@ class FormRegister extends StatelessWidget {
             );
           }
         },
-        child: Container(
+        child: Builder(
+          builder: (context) {
+            return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -120,6 +122,8 @@ class FormRegister extends StatelessWidget {
           const SizedBox(height: 8),
         ],
       ),
+            );
+          },
         ),
       ),
     );

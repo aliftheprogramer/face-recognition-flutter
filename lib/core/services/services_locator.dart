@@ -22,7 +22,7 @@ Future<void> setUpServiceLocator() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => DioClient());
-  sl.registerLazySingleton(() => Logger()); // <-- DITAMBAHKAN: Registrasi Logger
+  sl.registerLazySingleton(() => Logger()); 
 
   // Auth data sources
   sl.registerLazySingleton(() => AuthLocalService(sl()));

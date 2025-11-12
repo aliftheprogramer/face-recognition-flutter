@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../widget/input_field.dart';
@@ -27,7 +28,9 @@ class FormLogin extends StatelessWidget {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const StartScan()));
           }
         },
-        child: Container(
+        child: Builder(
+          builder: (context) {
+            return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -111,6 +114,8 @@ class FormLogin extends StatelessWidget {
           const SizedBox(height: 8),
         ],
       ),
+            );
+          },
         ),
       ),
     );

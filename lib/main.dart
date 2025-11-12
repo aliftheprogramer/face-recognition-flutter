@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'features/auth/presentation/pages/auth_page.dart';
+import 'core/services/services_locator.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await setUpServiceLocator();
   runApp(const MyApp());
 }
 
