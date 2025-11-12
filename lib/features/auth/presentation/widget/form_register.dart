@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../widget/input_field.dart';
 import '../../../../widget/primary_button.dart';
 import '../../../scan_wajah/presentation/pages/start_scan.dart';
+import '../cubit/register/register_cubit.dart';
+import '../cubit/register/register_state.dart';
 
 class FormRegister extends StatelessWidget {
   final VoidCallback? onSwitch;
@@ -10,7 +13,23 @@ class FormRegister extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BlocProvider(
+      create: (_) => RegisterCubit(),
+      child: BlocListener<RegisterCubit, RegisterState>(
+        listener: (context, state) {
+          if (state.status == RegisterStatus.failure && state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage!)),
+            );
+          }
+          if (state.status == RegisterStatus.success) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StartScan()),
+            );
+          }
+        },
+        child: Container(
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -39,30 +58,43 @@ class FormRegister extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Form input
-          const InputField(label: 'Nama Pengguna', hintText: 'Masukkan namamu'),
+          InputField(
+            label: 'Nama Pengguna',
+            hintText: 'Masukkan namamu',
+            onChanged: (v) => context.read<RegisterCubit>().usernameChanged(v),
+          ),
           const SizedBox(height: 16),
-          const InputField(label: 'Email', hintText: 'Masukkan email'),
+          InputField(
+            label: 'Email',
+            hintText: 'Masukkan email',
+            onChanged: (v) => context.read<RegisterCubit>().emailChanged(v),
+          ),
           const SizedBox(height: 16),
-          const InputField(
+          InputField(
             label: 'Kata Sandi',
             hintText: 'Masukan kata sandi',
             obscureText: true,
+            onChanged: (v) => context.read<RegisterCubit>().passwordChanged(v),
           ),
           const SizedBox(height: 16),
-          const InputField(
+          InputField(
             label: 'Konfirmasi Kata Sandi',
             hintText: 'Masukan ulang kata sandi',
             obscureText: true,
+            onChanged: (v) => context.read<RegisterCubit>().confirmPasswordChanged(v),
           ),
           const SizedBox(height: 24),
 
           // Tombol lanjut
-          PrimaryButton(
-            text: 'Lanjut',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const StartScan()),
+          BlocBuilder<RegisterCubit, RegisterState>(
+            builder: (context, state) {
+              return PrimaryButton(
+                text: state.status == RegisterStatus.loading ? 'Memproses...' : 'Daftar',
+                onPressed: state.status == RegisterStatus.loading
+                    ? null
+                    : () {
+                        context.read<RegisterCubit>().submit();
+                      },
               );
             },
           ),
@@ -87,6 +119,8 @@ class FormRegister extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+        ),
       ),
     );
   }

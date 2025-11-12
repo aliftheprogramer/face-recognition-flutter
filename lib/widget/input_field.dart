@@ -4,12 +4,14 @@ class InputField extends StatefulWidget {
   final String label;
   final String hintText;
   final bool obscureText;
+  final ValueChanged<String>? onChanged;
 
   const InputField({
     super.key,
     required this.label,
     required this.hintText,
     this.obscureText = false,
+    this.onChanged,
   });
 
   @override
@@ -55,6 +57,7 @@ class _InputFieldState extends State<InputField> {
         TextField(
           controller: _controller,
           obscureText: widget.obscureText,
+          onChanged: widget.onChanged,
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: const TextStyle(color: Colors.black38),

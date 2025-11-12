@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../widget/input_field.dart';
 import '../../../../widget/primary_button.dart';
 import '../../../scan_wajah/presentation/pages/start_scan.dart';
+import '../cubit/login/login_cubit.dart';
+import '../cubit/login/login_state.dart';
 
 class FormLogin extends StatelessWidget {
   final VoidCallback? onSwitch;
@@ -11,7 +14,20 @@ class FormLogin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BlocProvider(
+      create: (_) => LoginCubit(),
+      child: BlocListener<LoginCubit, LoginState>(
+        listener: (context, state) {
+          if (state.status == LoginStatus.failure && state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage!)),
+            );
+          }
+          if (state.status == LoginStatus.success) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const StartScan()));
+          }
+        },
+        child: Container(
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -45,29 +61,32 @@ class FormLogin extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          const InputField(
+          InputField(
             label: 'Email',
             hintText: 'Masukkan email',
+            onChanged: (v) => context.read<LoginCubit>().emailChanged(v),
           ),
           const SizedBox(height: 16),
-          const InputField(
+          InputField(
             label: 'Kata Sandi',
             hintText: 'Masukan kata sandi',
             obscureText: true,
+            onChanged: (v) => context.read<LoginCubit>().passwordChanged(v),
           ),
           const SizedBox(height: 16),
-          const InputField(
-            label: 'Konfirmasi Kata Sandi',
-            hintText: 'Masukan ulang kata sandi',
-            obscureText: true,
-          ),
           const SizedBox(height: 24),
 
           // Tombol lanjut
-          PrimaryButton(
-            text: 'Lanjut',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const StartScan()));
+          BlocBuilder<LoginCubit, LoginState>(
+            builder: (context, state) {
+              return PrimaryButton(
+                text: state.status == LoginStatus.loading ? 'Memproses...' : 'Masuk',
+                onPressed: state.status == LoginStatus.loading
+                    ? null
+                    : () {
+                        context.read<LoginCubit>().submit();
+                      },
+              );
             },
           ),
           const SizedBox(height: 110),
@@ -91,6 +110,8 @@ class FormLogin extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+        ),
       ),
     );
   }
