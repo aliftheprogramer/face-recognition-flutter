@@ -21,13 +21,13 @@ class LoggerInterceptor extends Interceptor {
       'SERVER RESPONSE: ${err.response?.data}',
     ); //Debug log
     handler.next(err); //Continue with the Error
-    // if (err.response?.statusCode == 401) {
-    //   logger.w('Unauthorized request detected. Redirecting to login.');
-    //   sl<AuthStateCubit>()
-    //       .appStarted(); // Trigger appStarted to check login state
-    // } else {
-    //   logger.w('An error occurred: ${err.message}');
-    // }
+    if (err.response?.statusCode == 401) {
+      logger.w('Unauthorized request detected. Redirecting to login.');
+      sl<AuthStateCubit>()
+          .appStarted(); // Trigger appStarted to check login state
+    } else {
+      logger.w('An error occurred: ${err.message}');
+    }
   }
 
   @override
