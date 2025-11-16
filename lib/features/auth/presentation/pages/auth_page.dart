@@ -24,19 +24,17 @@ class _AuthPageState extends State<AuthPage> {
           color: const Color(0xFFC2D8FC), // warna biru muda atas
           child: Column(
             children: [
-              const SizedBox(height: 80),
+              const SizedBox(height: 40),
               // Logo di tengah atas
-              Image.asset(
-                'face.png',
-                width: 103,
-                height: 103,
-              ),
-              const Spacer(),
+              Image.asset('assets/face.png', width: 103, height: 103),
+              const SizedBox(height: 18),
 
-              // Bagian bawah: form putih melengkung (no animation) — langsung pindah
-              _showRegister
-                  ? FormRegister(onSwitch: _toggle)
-                  : FormLogin(onSwitch: _toggle),
+              // Bagian bawah: form putih melengkung isi penuh hingga bawah
+              Expanded(
+                child: _showRegister
+                    ? FormRegister(onSwitch: _toggle)
+                    : FormLogin(onSwitch: _toggle),
+              ),
             ],
           ),
         ),

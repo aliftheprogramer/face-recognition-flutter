@@ -18,7 +18,10 @@ class StartScan extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 32.0,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -29,10 +32,21 @@ class StartScan extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(134),
                           child: Image.asset(
-                            'mukaorang.png',
+                            'assets/mukaorang.png',
                             width: 94,
                             height: 94,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const ColoredBox(
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -71,7 +85,11 @@ class StartScan extends StatelessWidget {
 
                       PrimaryButton(
                         text: "Masuk dengan scan wajah",
-                        icon: const Icon(Icons.camera_alt_outlined, size: 24, color: Colors.white),
+                        icon: const Icon(
+                          Icons.camera_alt_outlined,
+                          size: 24,
+                          color: Colors.white,
+                        ),
                         backgroundColor: const Color(0xFF2D64F0),
                         onPressed: () {
                           Navigator.of(context).push(
@@ -84,7 +102,10 @@ class StartScan extends StatelessWidget {
 
                       const SizedBox(height: 20),
 
-                      SecondaryButton(text: "Ambil dari penyimpanan", icon: const Icon(Icons.photo_outlined, size: 24),)
+                      SecondaryButton(
+                        text: "Ambil dari penyimpanan",
+                        icon: const Icon(Icons.photo_outlined, size: 24),
+                      ),
                     ],
                   ),
                 ),
@@ -93,7 +114,10 @@ class StartScan extends StatelessWidget {
 
             // Footer (anchored at bottom)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 22.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 22.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
