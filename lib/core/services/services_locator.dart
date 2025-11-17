@@ -1,6 +1,13 @@
 // lib/core/services/services_locator.dart
 
 import 'package:get_it/get_it.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/data/repository_impl/face_recognition_repository_impl.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/data/source/face_recognition_local_data_source.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/domain/repository/face_recognition_repository.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/domain/usecase/detect_face_usecase.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/domain/usecase/get_available_cameras_usecase.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/domain/usecase/recognize_face_usecase.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/face_recognition_cubit.dart';
 import 'package:logger/logger.dart'; // <-- Ditambahkan
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,4 +50,15 @@ Future<void> setUpServiceLocator() async {
 
   // App-level cubits / blocs
   sl.registerLazySingleton(() => AuthStateCubit());
+
+  sl.registerLazySingleton<FaceRecognitionRepository>(
+    () => FaceRecognitionRepositoryImpl(localDataSource: sl(), logger: sl()),
+  );
+  sl.registerLazySingleton(() => GetAvailableCamerasUsecase(sl()));
+  sl.registerLazySingleton(() => RecognizeFaceUsecase(sl()));
+  sl.registerFactory(() => FaceRecognitionCubit());
+  sl.registerLazySingleton<FaceRecognitionLocalDataSource>(
+    () => FaceRecognitionLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton(() => DetectFacesUsecase(sl()));
 }

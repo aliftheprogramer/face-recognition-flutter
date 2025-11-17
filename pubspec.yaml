@@ -54,7 +54,7 @@ dependencies:
   dotted_border: ^3.1.0
   camera: ^0.10.5+5
   image_picker: ^1.1.2 
-  tflite_fluter: ^0.12.1
+  tflite_flutter: ^0.12.1
 
 
 dev_dependencies:
