@@ -45,7 +45,12 @@ class FaceRecognitionCubit extends Cubit<FaceRecognitionState> {
         ),
       ),
       (cameras) async {
-        if (cameras.isEmpty) {
+        // Pastikan hasil bertipe List<CameraDescription>
+        final List<CameraDescription> camList = List<CameraDescription>.from(
+          cameras,
+        );
+
+        if (camList.isEmpty) {
           return emit(
             state.copyWith(
               cameraStatus: CameraStatus.error,
@@ -55,14 +60,14 @@ class FaceRecognitionCubit extends Cubit<FaceRecognitionState> {
           );
         }
 
-        final frontCamera = cameras.firstWhere(
+        final frontCamera = camList.firstWhere(
           (c) => c.lensDirection == CameraLensDirection.front,
-          orElse: () => cameras.first,
+          orElse: () => camList.first,
         );
 
         final controller = CameraController(
           frontCamera,
-          ResolutionPreset.low,
+          ResolutionPreset.high,
           enableAudio: false,
           imageFormatGroup: ImageFormatGroup.yuv420,
         );
@@ -100,6 +105,91 @@ class FaceRecognitionCubit extends Cubit<FaceRecognitionState> {
         detectedFaces: [],
       ),
     );
+  }
+
+  Future<void> switchCamera() async {
+    final current = state.controller;
+    if (current == null) return;
+
+    // Ambil daftar kamera
+    final camsEither = await _getAvailableCamerasUsecase(param: NoParams());
+    await current.dispose();
+
+    await camsEither.fold(
+      (err) async {
+        emit(
+          state.copyWith(
+            cameraStatus: CameraStatus.error,
+            errorMessage: err.toString(),
+            controller: null,
+          ),
+        );
+      },
+      (cameras) async {
+        final List<CameraDescription> camList = List<CameraDescription>.from(
+          cameras,
+        );
+        if (camList.isEmpty) {
+          emit(
+            state.copyWith(
+              cameraStatus: CameraStatus.error,
+              errorMessage: 'Tidak ada kamera tersedia.',
+              controller: null,
+            ),
+          );
+          return;
+        }
+
+        final usingFront =
+            state.frontCamera?.lensDirection == CameraLensDirection.front;
+        final target = camList.firstWhere(
+          (c) =>
+              c.lensDirection ==
+              (usingFront
+                  ? CameraLensDirection.back
+                  : CameraLensDirection.front),
+          orElse: () => camList.first,
+        );
+
+        final newController = CameraController(
+          target,
+          ResolutionPreset.high,
+          enableAudio: false,
+          imageFormatGroup: ImageFormatGroup.yuv420,
+        );
+
+        try {
+          await newController.initialize();
+          emit(
+            state.copyWith(
+              cameraStatus: CameraStatus.ready,
+              controller: newController,
+              frontCamera: target,
+            ),
+          );
+        } on CameraException catch (e) {
+          emit(
+            state.copyWith(
+              cameraStatus: CameraStatus.error,
+              errorMessage: 'Gagal ganti kamera: ${e.description}',
+              controller: null,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> toggleFlash() async {
+    final controller = state.controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    try {
+      final current = controller.value.flashMode;
+      final next = current == FlashMode.torch ? FlashMode.off : FlashMode.torch;
+      await controller.setFlashMode(next);
+    } catch (_) {
+      // Abaikan jika mode flash tidak didukung
+    }
   }
 
   Future<void> captureAndRecognize() async {
