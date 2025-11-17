@@ -62,40 +62,52 @@ class _ScanningFacePageState extends State<ScanningFacePage>
 
   Future<void> _startController(CameraDescription description) async {
     final old = _controller;
-    _controller = CameraController(
+    final controller = CameraController(
       description,
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
     try {
-      await _controller!.initialize();
+      await controller.initialize();
+      if (!mounted) return;
+      _controller = controller;
       if (_flashOn) {
-        await _controller!.setFlashMode(FlashMode.torch).catchError((_) {});
+        try {
+          await _controller!.setFlashMode(FlashMode.torch);
+        } catch (_) {}
       }
     } catch (e) {
       debugPrint('Controller start error: $e');
     } finally {
       old?.dispose();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _initializing = false;
         });
+      }
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    if (state == AppLifecycleState.inactive) {
-      _controller?.dispose();
+    final controller = _controller;
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      controller?.dispose();
+      _controller = null;
     } else if (state == AppLifecycleState.resumed) {
-      _startController(_cameras[_cameraIndex]);
+      if (_cameras.isNotEmpty) {
+        setState(() {
+          _initializing = true;
+        });
+        _startController(_cameras[_cameraIndex]);
+      }
     }
   }
 
   Future<void> _toggleFlash() async {
-    if (_controller == null) return;
+    if (_controller == null || _controller!.value.isInitialized != true) return;
     _flashOn = !_flashOn;
     try {
       await _controller!.setFlashMode(
@@ -172,66 +184,75 @@ class _ScanningFacePageState extends State<ScanningFacePage>
             ),
             Expanded(
               child: Center(
-                child: AspectRatio(
-                  aspectRatio: _controller?.value.aspectRatio ?? 3 / 4,
-                  child: _initializing
-                      ? const Center(child: CircularProgressIndicator())
-                      : _controller == null
-                      ? const Center(
-                          child: Text(
-                            'Camera not available',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            CameraPreview(_controller!),
-                            if (_showCircle)
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final size = constraints.biggest;
-                                  final base = size.shortestSide;
-                                  // Typical face oval: taller than wide
-                                  final ovalWidth = base * 0.62;
-                                  final ovalHeight = base * 0.86;
-                                  return SizedBox.expand(
-                                    child: CustomPaint(
-                                      painter: _FaceOvalPainter(
-                                        color: Colors.white70,
-                                        strokeWidth: 3,
-                                        ovalWidth: ovalWidth,
-                                        ovalHeight: ovalHeight,
-                                      ),
-                                    ),
-                                  );
-                                },
+                child: Builder(
+                  builder: (context) {
+                    final controller = _controller;
+                    final isReady = controller?.value.isInitialized == true;
+                    final aspect = isReady
+                        ? controller!.value.aspectRatio
+                        : 3 / 4;
+                    return AspectRatio(
+                      aspectRatio: aspect,
+                      child: _initializing
+                          ? const Center(child: CircularProgressIndicator())
+                          : !isReady
+                          ? const Center(
+                              child: Text(
+                                'Camera not available',
+                                style: TextStyle(color: Colors.white),
                               ),
-                            Positioned.fill(
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
+                            )
+                          : Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                CameraPreview(controller!),
+                                if (_showCircle)
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final size = constraints.biggest;
+                                      final base = size.shortestSide;
+                                      // Typical face oval: taller than wide
+                                      final ovalWidth = base * 0.62;
+                                      final ovalHeight = base * 0.86;
+                                      return SizedBox.expand(
+                                        child: CustomPaint(
+                                          painter: _FaceOvalPainter(
+                                            color: Colors.white70,
+                                            strokeWidth: 3,
+                                            ovalWidth: ovalWidth,
+                                            ovalHeight: ovalHeight,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black45,
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: Text(
-                                    _instruction,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                Positioned.fill(
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black45,
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Text(
+                                        _instruction,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                    );
+                  },
                 ),
               ),
             ),

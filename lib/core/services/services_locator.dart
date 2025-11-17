@@ -14,6 +14,7 @@ import '../../features/auth/domain/usecase/signin_usecases.dart';
 import '../../features/auth/domain/usecase/is_logged_in.dart';
 import '../../features/auth/domain/usecase/is_first_run_usecase.dart';
 import '../../features/auth/domain/usecase/set_first_run_complete_usecase.dart';
+import '../../common/bloc/auth/auth_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -22,15 +23,16 @@ Future<void> setUpServiceLocator() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => DioClient());
-  sl.registerLazySingleton(() => Logger()); 
+  sl.registerLazySingleton(() => Logger());
 
   // Auth data sources
   sl.registerLazySingleton(() => AuthLocalService(sl()));
   sl.registerLazySingleton(() => AuthApiService(sl(), sl()));
 
   // Auth repository
-  sl.registerLazySingleton<AuthRepository>(() =>
-      AuthRepositoryImpl(api: sl(), local: sl(), logger: sl()));
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(api: sl(), local: sl(), logger: sl()),
+  );
 
   // Auth usecases
   sl.registerLazySingleton(() => SigninUsecases(sl()));
@@ -38,4 +40,7 @@ Future<void> setUpServiceLocator() async {
   sl.registerLazySingleton(() => IsLoggedInUseCase(sl()));
   sl.registerLazySingleton(() => IsFirstRunUsecase(sl()));
   sl.registerLazySingleton(() => SetFirstRunCompleteUsecase(sl()));
+
+  // App-level cubits / blocs
+  sl.registerLazySingleton(() => AuthStateCubit());
 }
