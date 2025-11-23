@@ -192,6 +192,25 @@ class FaceRecognitionCubit extends Cubit<FaceRecognitionState> {
     }
   }
 
+  /// Ambil foto dan simpan `XFile` ke `state.captures` tanpa melakukan
+  /// proses pengenalan. Mengembalikan `XFile` yang diambil atau `null` jika gagal.
+  Future<XFile?> captureAndSave() async {
+    final controller = state.controller;
+    if (controller == null || !controller.value.isInitialized) return null;
+
+    try {
+      final xFile = await controller.takePicture();
+      final newCaptures = List<XFile>.from(state.captures)..add(xFile);
+      emit(state.copyWith(captures: newCaptures));
+      return xFile;
+    } catch (e) {
+      emit(
+        state.copyWith(errorMessage: 'Gagal mengambil gambar: ${e.toString()}'),
+      );
+      return null;
+    }
+  }
+
   Future<void> captureAndRecognize() async {
     final controller = state.controller;
     if (controller == null || !controller.value.isInitialized) return;
@@ -215,6 +234,11 @@ class FaceRecognitionCubit extends Cubit<FaceRecognitionState> {
     );
     try {
       final xFile = await controller.takePicture();
+
+      // Simpan XFile ke state.captures
+      final newCaptures = List<XFile>.from(state.captures)..add(xFile);
+      emit(state.copyWith(captures: newCaptures));
+
       final imageFile = xFile.length() == 0 ? null : File(xFile.path);
 
       if (imageFile == null) {

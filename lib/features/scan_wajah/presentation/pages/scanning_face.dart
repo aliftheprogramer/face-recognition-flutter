@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/face_recognition_state.dart';
 import '../cubit/face_recognition_cubit.dart';
+import 'scan_result.dart';
 
 class ScanningFacePage extends StatelessWidget {
   const ScanningFacePage({super.key});
@@ -185,7 +186,28 @@ class _ScanningFaceViewState extends State<_ScanningFaceView>
                                 .toggleFlash(),
                           ),
                           // Center: shutter (no-op)
-                          _ShutterButton(onTap: () {}),
+                          _ShutterButton(
+                            onTap: () async {
+                              final cubit = context
+                                  .read<FaceRecognitionCubit>();
+                              final xfile = await cubit.captureAndSave();
+                              if (xfile == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Gagal mengambil gambar'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final files = cubit.state.captures;
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ScanResultPage(files: files),
+                                ),
+                              );
+                            },
+                          ),
                           // Right: switch camera
                           _CircleIconButton(
                             icon: Icons.cameraswitch,

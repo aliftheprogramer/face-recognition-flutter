@@ -11,26 +11,47 @@ class AuthStateCubit extends Cubit<AuthState> {
   AuthStateCubit() : super(AppInitialState());
 
   Future<void> checkAuthStatus() async {
-    final bool isLoggedIn = await sl<IsLoggedInUseCase>().call(param: NoParams());
-    if (isLoggedIn) {
-      emit(Authenticated());
-    } else {
+    try {
+      final bool isLoggedIn = await sl<IsLoggedInUseCase>()
+          .call(param: NoParams())
+          .timeout(const Duration(seconds: 5));
+      if (isLoggedIn) {
+        emit(Authenticated());
+      } else {
+        emit(UnAuthenticated());
+      }
+    } catch (_) {
+      // On error or timeout, assume unauthenticated so UI can proceed.
       emit(UnAuthenticated());
     }
   }
 
-  void appStarted() async {
-    final bool isFirstRun = await sl<IsFirstRunUsecase>().call(param: NoParams());
-    
-    if (isFirstRun) {
-      emit(FirstRun());
-    } else {
-      await checkAuthStatus();
+  Future<void> appStarted() async {
+    // Prevent duplicate initialization if already resolved.
+    if (state is! AppInitialState) return;
+    try {
+      final bool isFirstRun = await sl<IsFirstRunUsecase>()
+          .call(param: NoParams())
+          .timeout(const Duration(seconds: 5));
+      if (isFirstRun) {
+        emit(FirstRun());
+      } else {
+        await checkAuthStatus();
+      }
+    } catch (_) {
+      // Fallback: treat as unauthenticated if anything fails.
+      emit(UnAuthenticated());
     }
   }
 
-  void finishWelcomeScreen() async {
-    await sl<SetFirstRunCompleteUsecase>().call(param: NoParams());
+  Future<void> finishWelcomeScreen() async {
+    try {
+      await sl<SetFirstRunCompleteUsecase>()
+          .call(param: NoParams())
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Ignore errors; continue to auth status check.
+    }
     await checkAuthStatus();
   }
 }

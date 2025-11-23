@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gii_dace_recognition/common/bloc/auth/auth_cubit.dart';
+import 'package:gii_dace_recognition/common/bloc/auth/auth_state.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
 
 import 'features/auth/presentation/pages/auth_page.dart';
 import 'core/services/services_locator.dart';
@@ -15,13 +19,30 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFC2D8FC)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => sl<AuthStateCubit>()..appStarted()),
+        // BlocProvider(create: (context) => sl<NavigationCubit>()),
+      ],
+      child: MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFC2D8FC)),
+        ),
+        home: BlocBuilder<AuthStateCubit, AuthState>(
+          builder: (context, state) {
+            if (state is Authenticated) {
+              return StartScan();
+            }
+            // Treat FirstRun the same as unauthenticated (show auth page)
+            if (state is UnAuthenticated || state is FirstRun) {
+              return AuthPage();
+            }
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          },
+        ),
       ),
-      home: const AuthPage(),
     );
   }
 }
-
