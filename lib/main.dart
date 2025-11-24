@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gii_dace_recognition/common/bloc/auth/auth_cubit.dart';
 import 'package:gii_dace_recognition/common/bloc/auth/auth_state.dart';
+import 'package:gii_dace_recognition/common/pages/main_screen.dart';
+import 'package:gii_dace_recognition/features/auth/presentation/pages/welcome_page.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
 
 import 'features/auth/presentation/pages/auth_page.dart';
@@ -31,11 +33,13 @@ class MyApp extends StatelessWidget {
         home: BlocBuilder<AuthStateCubit, AuthState>(
           builder: (context, state) {
             if (state is Authenticated) {
-              return StartScan();
+              // return StartScan();
+              return const MainScreen();
             }
             // Treat FirstRun the same as unauthenticated (show auth page)
             if (state is UnAuthenticated || state is FirstRun) {
-              return AuthPage();
+              // return AuthPage();
+              return const WelcomePage();
             }
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
