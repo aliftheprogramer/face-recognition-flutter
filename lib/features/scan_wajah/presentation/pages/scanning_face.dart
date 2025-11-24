@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:camera/camera.dart';
+import 'package:logger/logger.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/face_recognition_state.dart';
 import '../cubit/face_recognition_cubit.dart';
 import 'scan_result.dart';
+import 'package:gii_dace_recognition/core/services/services_locator.dart';
 
 class ScanningFacePage extends StatelessWidget {
   const ScanningFacePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Log creation and camera init
+    sl<Logger>().i('ScanningFacePage: build - creating FaceRecognitionCubit');
     return BlocProvider(
-      create: (context) => FaceRecognitionCubit()..initCamera(),
+      create: (context) {
+        sl<Logger>().i(
+          'ScanningFacePage: creating FaceRecognitionCubit and calling initCamera',
+        );
+        final cubit = FaceRecognitionCubit();
+        cubit.initCamera();
+        return cubit;
+      },
       child: const _ScanningFaceView(),
     );
   }
@@ -26,26 +37,38 @@ class _ScanningFaceView extends StatefulWidget {
 
 class _ScanningFaceViewState extends State<_ScanningFaceView>
     with WidgetsBindingObserver {
+  Logger get _logger => sl<Logger>();
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _logger.i('ScanningFaceView: initState - observer added');
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    context.read<FaceRecognitionCubit>().disposeController();
+    _logger.i(
+      'ScanningFaceView: dispose - removing observer and disposing controller',
+    );
+    try {
+      context.read<FaceRecognitionCubit>().disposeController();
+    } catch (e, st) {
+      _logger.w('Error while disposing controller: $e\n$st');
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final cubit = context.read<FaceRecognitionCubit>();
+    _logger.i('AppLifecycleState changed: $state');
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
+      _logger.i('App going to background - disposing camera controller');
       cubit.disposeController();
     } else if (state == AppLifecycleState.resumed) {
+      _logger.i('App resumed - re-initializing camera');
       cubit.initCamera();
     }
   }
@@ -59,6 +82,7 @@ class _ScanningFaceViewState extends State<_ScanningFaceView>
           switch (state.cameraStatus) {
             case CameraStatus.initial:
             case CameraStatus.loading:
+              _logger.i('CameraStatus: loading');
               return const SizedBox.expand();
             case CameraStatus.error:
               return Center(
@@ -68,7 +92,13 @@ class _ScanningFaceViewState extends State<_ScanningFaceView>
                 ),
               );
             case CameraStatus.ready:
-              final controller = state.controller!;
+              _logger.i('CameraStatus: ready');
+              final controllerReady = state.controller;
+              if (controllerReady == null) {
+                _logger.w('CameraStatus ready but controller is null');
+                return const SizedBox.expand();
+              }
+              final controller = controllerReady;
               final previewSize = controller.value.previewSize;
               // Full-screen camera with overlays (guide + controls)
               return Stack(
@@ -190,30 +220,48 @@ class _ScanningFaceViewState extends State<_ScanningFaceView>
                             onTap: () async {
                               final cubit = context
                                   .read<FaceRecognitionCubit>();
-                              final xfile = await cubit.captureAndSave();
-                              if (xfile == null) {
+                              _logger.i('Shutter pressed - capturing image');
+                              try {
+                                final xfile = await cubit.captureAndSave();
+                                if (xfile == null) {
+                                  _logger.w(
+                                    'Capture failed - returned null XFile',
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Gagal mengambil gambar'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                _logger.i('Capture saved: ${xfile.path}');
+                                final files = cubit.state.captures;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ScanResultPage(files: files),
+                                  ),
+                                );
+                              } catch (e, st) {
+                                _logger.e('Exception during capture: $e\n$st');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Gagal mengambil gambar'),
                                   ),
                                 );
-                                return;
                               }
-
-                              final files = cubit.state.captures;
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => ScanResultPage(files: files),
-                                ),
-                              );
                             },
                           ),
                           // Right: switch camera
                           _CircleIconButton(
                             icon: Icons.cameraswitch,
-                            onTap: () => context
-                                .read<FaceRecognitionCubit>()
-                                .switchCamera(),
+                            onTap: () {
+                              _logger.i('Camera switch requested');
+                              context
+                                  .read<FaceRecognitionCubit>()
+                                  .switchCamera();
+                            },
                           ),
                         ],
                       ),
