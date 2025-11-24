@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gii_dace_recognition/common/bloc/navigation/navigation_cubit.dart';
+import 'package:gii_dace_recognition/features/profile/presentation/pages/profile_page.dart';
 import 'package:gii_dace_recognition/widget/bottom_navigator_widget.dart';
 
 class MainScreen extends StatelessWidget {
@@ -21,7 +21,7 @@ class MainScreen extends StatelessWidget {
             } else if (state.tab == NavigationTab.aktivitas) {
               return const Center(child: Text("Halaman Aktivitas"));
             } else {
-              return const Center(child: Text("Halaman Profil"));
+              return const ProfilePage();
             }
           },
         ),
