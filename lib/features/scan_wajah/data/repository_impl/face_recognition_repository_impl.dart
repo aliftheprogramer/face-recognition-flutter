@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:dartz/dartz.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/data/source/face_recognition_local_data_source.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/data/source/face_recognition_remote_data_source.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/domain/entity/detected_face_entity.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/domain/entity/face_recognition_entity.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/domain/repository/face_recognition_repository.dart';
@@ -10,10 +11,12 @@ import 'package:logger/logger.dart';
 
 class FaceRecognitionRepositoryImpl implements FaceRecognitionRepository {
   final FaceRecognitionLocalDataSource localDataSource;
+  final FaceRecognitionRemoteDataSource remoteDataSource;
   final Logger logger;
 
   FaceRecognitionRepositoryImpl({
     required this.localDataSource,
+    required this.remoteDataSource,
     required this.logger,
   });
 
@@ -60,7 +63,7 @@ class FaceRecognitionRepositoryImpl implements FaceRecognitionRepository {
     File image,
   ) async {
     try {
-      final result = await localDataSource.registerFace(userId, image);
+      final result = await remoteDataSource.registerFace(userId, image);
       return Right(result);
     } on Exception catch (e) {
       logger.e('[Repo] Register Face error: $e');

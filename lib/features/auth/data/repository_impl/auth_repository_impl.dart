@@ -7,6 +7,7 @@ import '../model/login_request_model.dart';
 import '../model/register_request_model.dart';
 import '../source/auth_api_service.dart';
 import '../source/auth_local_service.dart';
+import 'dart:convert';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthApiService api;
@@ -60,6 +61,26 @@ class AuthRepositoryImpl implements AuthRepository {
       } else {
         logger.w('[Repo] Token not found in login response');
       }
+      // Try to persist user object if available in response
+      try {
+        final dataMap = res.data;
+        Map? userMap;
+        if (dataMap is Map) {
+          if (dataMap['user'] is Map)
+            userMap = dataMap['user'];
+          else if (dataMap['data'] is Map && dataMap['data']['user'] is Map) {
+            userMap = dataMap['data']['user'];
+          } else if (dataMap['data'] is Map &&
+              dataMap['data']['user'] == null) {
+            // sometimes data itself contains user fields
+            userMap = dataMap['data'];
+          }
+        }
+        if (userMap != null) {
+          await local.saveUserJson(jsonEncode(userMap));
+          logger.i('[Repo] User saved');
+        }
+      } catch (_) {}
       return Right(res);
     } on DioException catch (e) {
       final msg = e.response?.data?.toString() ?? e.message ?? 'Login failed';

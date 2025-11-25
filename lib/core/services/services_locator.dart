@@ -22,6 +22,8 @@ import '../../features/auth/domain/usecase/is_logged_in.dart';
 import '../../features/auth/domain/usecase/is_first_run_usecase.dart';
 import '../../features/auth/domain/usecase/set_first_run_complete_usecase.dart';
 import '../../common/bloc/auth/auth_cubit.dart';
+import '../../features/scan_wajah/data/source/face_recognition_remote_data_source.dart';
+import '../../features/scan_wajah/domain/usecase/register_face_usecase.dart';
 
 final sl = GetIt.instance;
 
@@ -50,15 +52,24 @@ Future<void> setUpServiceLocator() async {
 
   // App-level cubits / blocs
   sl.registerLazySingleton(() => AuthStateCubit());
-
-  sl.registerLazySingleton<FaceRecognitionRepository>(
-    () => FaceRecognitionRepositoryImpl(localDataSource: sl(), logger: sl()),
-  );
-  sl.registerLazySingleton(() => GetAvailableCamerasUsecase(sl()));
-  sl.registerLazySingleton(() => RecognizeFaceUsecase(sl()));
-  sl.registerFactory(() => FaceRecognitionCubit());
+  // Face recognition: local + remote data sources
   sl.registerLazySingleton<FaceRecognitionLocalDataSource>(
     () => FaceRecognitionLocalDataSourceImpl(),
   );
+  sl.registerLazySingleton<FaceRecognitionRemoteDataSource>(
+    () => FaceRecognitionRemoteDataSourceImpl(client: sl(), logger: sl()),
+  );
+
+  sl.registerLazySingleton<FaceRecognitionRepository>(
+    () => FaceRecognitionRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+      logger: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => GetAvailableCamerasUsecase(sl()));
+  sl.registerLazySingleton(() => RecognizeFaceUsecase(sl()));
+  sl.registerLazySingleton(() => RegisterFaceUsecase(sl()));
+  sl.registerFactory(() => FaceRecognitionCubit());
   sl.registerLazySingleton(() => DetectFacesUsecase(sl()));
 }

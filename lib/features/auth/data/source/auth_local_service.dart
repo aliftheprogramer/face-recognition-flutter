@@ -43,6 +43,22 @@ class AuthLocalService {
     await _prefs.remove(_kAccessToken);
   }
 
+  static const _kCurrentUser = 'current_user';
+
+  /// Save current user object as JSON string
+  Future<void> saveUserJson(String json) async {
+    await _prefs.setString(_kCurrentUser, json);
+  }
+
+  /// Return stored JSON string representing current user, or null
+  String? getUserJson() {
+    return _prefs.getString(_kCurrentUser);
+  }
+
+  Future<void> clearUser() async {
+    await _prefs.remove(_kCurrentUser);
+  }
+
   Future<bool> isLoggedIn() async {
     return getToken() != null;
   }

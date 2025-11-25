@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../widget/input_field.dart';
 import '../../../../widget/primary_button.dart';
-import '../../../scan_wajah/presentation/pages/start_scan.dart';
+// navigate to login on success (handled by parent via onSwitch)
 import '../cubit/register/register_cubit.dart';
 import '../cubit/register/register_state.dart';
 
@@ -24,9 +24,12 @@ class FormRegister extends StatelessWidget {
             ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
           if (state.status == RegisterStatus.success) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const StartScan()),
+            // Switch to login form so user can login
+            if (onSwitch != null) onSwitch!();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Registrasi berhasil. Silakan masuk.'),
+              ),
             );
           }
         },

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gii_dace_recognition/features/profile/presentation/widget/item_profile_widget.dart';
+import 'dart:convert';
+import '../../../../core/services/services_locator.dart';
+import '../../../auth/data/source/auth_local_service.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
 // Pastikan path import ini sesuai dengan struktur folder kamu
 // import 'path/to/item_profile_widget.dart';
 
@@ -12,6 +16,22 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userJson = sl<AuthLocalService>().getUserJson();
+    Map<String, dynamic>? user;
+    if (userJson != null) {
+      try {
+        user = jsonDecode(userJson) as Map<String, dynamic>;
+      } catch (_) {
+        user = null;
+      }
+    }
+
+    final displayName =
+        user?['name']?.toString() ??
+        user?['fullname']?.toString() ??
+        'Nama Pengguna';
+    final avatarUrl = user?['avatar'] ?? user?['photo'] ?? user?['photo_url'];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -62,9 +82,9 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 60),
 
                   // Nama User
-                  const Text(
-                    'Budi Siregar',
-                    style: TextStyle(
+                  Text(
+                    displayName,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
@@ -140,14 +160,7 @@ class ProfilePage extends StatelessWidget {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4,
-                      ), // Border putih tebal
-                      image: const DecorationImage(
-                        image: AssetImage('assets/mukaorang.png'),
-                        fit: BoxFit.cover,
-                      ),
+                      border: Border.all(color: Colors.white, width: 4),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -156,21 +169,52 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ],
                     ),
+                    child: ClipOval(
+                      child: avatarUrl != null
+                          ? Image.network(
+                              avatarUrl.toString(),
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => const ColoredBox(
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const ColoredBox(
+                              color: Colors.grey,
+                              child: Center(
+                                child: Icon(Icons.person, color: Colors.white),
+                              ),
+                            ),
+                    ),
                   ),
                   // Ikon Edit (Pensil)
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF3B82F6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 16,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const StartScan()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3B82F6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ),

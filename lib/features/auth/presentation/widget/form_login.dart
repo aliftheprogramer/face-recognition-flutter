@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../widget/input_field.dart';
 import '../../../../widget/primary_button.dart';
-import '../../../scan_wajah/presentation/pages/start_scan.dart';
+import '../../../../common/pages/main_screen.dart';
 import '../cubit/login/login_cubit.dart';
 import '../cubit/login/login_state.dart';
 
@@ -26,9 +26,10 @@ class FormLogin extends StatelessWidget {
             ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
           if (state.status == LoginStatus.success) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const StartScan()),
+            // On successful login, navigate to main screen and replace current stack
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainScreen()),
+              (route) => false,
             );
           }
         },
