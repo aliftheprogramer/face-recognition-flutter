@@ -4,6 +4,8 @@ import 'package:gii_dace_recognition/features/profile/presentation/widget/item_p
 import 'dart:convert';
 import '../../../../core/services/services_locator.dart';
 import '../../../auth/data/source/auth_local_service.dart';
+import '../../../auth/data/source/auth_api_service.dart';
+import '../../../../core/constant/api_urls.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
 // Pastikan path import ini sesuai dengan struktur folder kamu
 // import 'path/to/item_profile_widget.dart';
@@ -11,26 +13,82 @@ import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/star
 // Jika file item_profile_widget.dart berada di folder yang berbeda,
 // kamu bisa meng-copy class ItemProfileWidget di atas ke file ini juga sementara waktu agar tidak error.
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  Map<String, dynamic>? _user;
+  String? _avatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load cached user immediately and then fetch fresh profile
     final userJson = sl<AuthLocalService>().getUserJson();
-    Map<String, dynamic>? user;
     if (userJson != null) {
       try {
-        user = jsonDecode(userJson) as Map<String, dynamic>;
+        _user = jsonDecode(userJson) as Map<String, dynamic>;
       } catch (_) {
-        user = null;
+        _user = null;
       }
+      _computeAvatarFromUser();
     }
+    _fetchProfile();
+  }
 
+  void _computeAvatarFromUser() {
+    if (_user == null) return;
+    // prefer avatar/photo fields, otherwise check faces array
+    final avatar = _user!['avatar'] ?? _user!['photo'] ?? _user!['photo_url'];
+    if (avatar != null && avatar is String && avatar.isNotEmpty) {
+      _avatarUrl = avatar;
+      return;
+    }
+    try {
+      final faces = _user!['faces'];
+      if (faces is List && faces.isNotEmpty) {
+        final first = faces.first;
+        final fp = first['filepath'] as String?;
+        if (fp != null && fp.isNotEmpty) {
+          final base = ApiUrls.baseUrl.replaceFirst('/api/v1', '');
+          _avatarUrl = fp.startsWith('http') ? fp : '$base/$fp';
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final api = sl<AuthApiService>();
+      final res = await api.getProfile();
+      final data = res.data;
+      if (data is Map) {
+        // The API returns user object as shown in sample. Save and use it.
+        _user = Map<String, dynamic>.from(data);
+        _computeAvatarFromUser();
+        // persist locally so other parts can read cached user
+        try {
+          await sl<AuthLocalService>().saveUserJson(jsonEncode(_user));
+        } catch (_) {}
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      // ignore errors and keep cached user
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final displayName =
-        user?['name']?.toString() ??
-        user?['fullname']?.toString() ??
+        _user?['username']?.toString() ??
+        _user?['name']?.toString() ??
+        _user?['fullname']?.toString() ??
         'Nama Pengguna';
-    final avatarUrl = user?['avatar'] ?? user?['photo'] ?? user?['photo_url'];
+    final avatarUrl = _avatarUrl;
 
     return Scaffold(
       backgroundColor: Colors.white,

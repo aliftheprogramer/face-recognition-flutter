@@ -55,102 +55,111 @@ class FormLogin extends StatelessWidget {
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: IntrinsicHeight(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Selamat Datang',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Masukkan detail akunmu',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  InputField(
-                                    label: 'Email',
-                                    hintText: 'Masukkan email',
-                                    onChanged: (v) => context
-                                        .read<LoginCubit>()
-                                        .emailChanged(v),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  InputField(
-                                    label: 'Kata Sandi',
-                                    hintText: 'Masukan kata sandi',
-                                    obscureText: true,
-                                    onChanged: (v) => context
-                                        .read<LoginCubit>()
-                                        .passwordChanged(v),
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Tombol lanjut
-                                  BlocBuilder<LoginCubit, LoginState>(
-                                    builder: (context, state) {
-                                      return PrimaryButton(
-                                        text:
-                                            state.status == LoginStatus.loading
-                                            ? 'Memproses...'
-                                            : 'Masuk',
-                                        onPressed:
-                                            state.status == LoginStatus.loading
-                                            ? null
-                                            : () {
-                                                context
-                                                    .read<LoginCubit>()
-                                                    .submit();
-                                              },
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        // no-op refresh for login form; keep keyboard/inputs intact
+                        await Future.delayed(const Duration(milliseconds: 300));
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    const Text('Belum punya akun? '),
-                                    GestureDetector(
-                                      onTap: onSwitch,
-                                      child: const Text(
-                                        'Buat Akun',
-                                        style: TextStyle(
-                                          color: Color(0xFF2D64F0),
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Selamat Datang',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Masukkan detail akunmu',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    InputField(
+                                      label: 'Email',
+                                      hintText: 'Masukkan email',
+                                      onChanged: (v) => context
+                                          .read<LoginCubit>()
+                                          .emailChanged(v),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    InputField(
+                                      label: 'Kata Sandi',
+                                      hintText: 'Masukan kata sandi',
+                                      obscureText: true,
+                                      onChanged: (v) => context
+                                          .read<LoginCubit>()
+                                          .passwordChanged(v),
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Tombol lanjut
+                                    BlocBuilder<LoginCubit, LoginState>(
+                                      builder: (context, state) {
+                                        return PrimaryButton(
+                                          text:
+                                              state.status ==
+                                                  LoginStatus.loading
+                                              ? 'Memproses...'
+                                              : 'Masuk',
+                                          onPressed:
+                                              state.status ==
+                                                  LoginStatus.loading
+                                              ? null
+                                              : () {
+                                                  context
+                                                      .read<LoginCubit>()
+                                                      .submit();
+                                                },
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text('Belum punya akun? '),
+                                      GestureDetector(
+                                        onTap: onSwitch,
+                                        child: const Text(
+                                          'Buat Akun',
+                                          style: TextStyle(
+                                            color: Color(0xFF2D64F0),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

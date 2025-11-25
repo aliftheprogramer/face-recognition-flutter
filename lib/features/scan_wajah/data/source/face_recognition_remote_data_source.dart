@@ -25,9 +25,15 @@ class FaceRecognitionRemoteDataSourceImpl
   Future<FaceRecognitionEntity> registerFace(String userId, File image) async {
     try {
       final fileName = image.path.split(Platform.pathSeparator).last;
+      // API expects key 'files' (array) carrying the uploaded file(s)
       final form = FormData.fromMap({
-        'file': MultipartFile.fromFileSync(image.path, filename: fileName),
-        'user_id': userId,
+        'files': [
+          MultipartFile.fromFileSync(
+            image.path,
+            filename: fileName,
+            // contentType can be omitted; Dio will set multipart headers
+          ),
+        ],
       });
 
       logger.i('[API] Upload face to ${ApiUrls.uploadFace}');
@@ -35,35 +41,20 @@ class FaceRecognitionRemoteDataSourceImpl
       final res = await client.post(
         ApiUrls.uploadFace,
         data: form,
-        // ensure multipart content header is set by Dio when sending FormData
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       final data = res.data;
 
-      // Tolerant parsing — try to extract useful info if present
-      if (data is Map) {
-        final nested = data['data'] ?? data;
-        if (nested is Map) {
-          final uid =
-              nested['user_id']?.toString() ??
-              nested['id']?.toString() ??
-              userId;
-          final name =
-              nested['name']?.toString() ??
-              nested['user_name']?.toString() ??
-              'User';
-          final confidence = (nested['confidence'] is num)
-              ? (nested['confidence'] as num).toDouble()
-              : 1.0;
-          return FaceRecognitionEntity(
-            userId: uid,
-            userName: name,
-            confidence: confidence,
-          );
-        }
+      // If API indicates success, return a registration success entity.
+      // The documented response is:
+      // { "status": "success", "uploaded_face_ids": [19] }
+      if (data is Map &&
+          (data['status'] == 'success' || data['status'] == 'ok')) {
+        return FaceRecognitionEntity.registrationSuccess();
       }
 
-      // fallback: return registration success entity
+      // Otherwise, return a generic success fallback as well
       return FaceRecognitionEntity.registrationSuccess();
     } on DioException catch (e) {
       logger.e('[RemoteDataSource] registerFace error: ${e.message}');

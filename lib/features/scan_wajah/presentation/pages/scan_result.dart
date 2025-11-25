@@ -37,17 +37,13 @@ class _ScanResultPageState extends State<ScanResultPage> {
     String userId;
     try {
       final m = jsonDecode(userJson) as Map<String, dynamic>;
-      userId =
-          (m['id'] ?? m['user_id'] ?? m['uid'] ?? m['userId'])?.toString() ??
-          '';
+      userId = (m['id'] ?? m['user_id'] ?? m['uid'] ?? m['userId'])?.toString() ?? '';
     } catch (_) {
       userId = '';
     }
 
     if (userId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User id tidak tersedia.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User id tidak tersedia.')));
       return;
     }
 
@@ -59,21 +55,15 @@ class _ScanResultPageState extends State<ScanResultPage> {
       final res = await usecase(param: {'userId': userId, 'file': file});
       res.fold(
         (err) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Gagal upload: $err')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal upload: $err')));
         },
         (FaceRecognitionEntity ent) async {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Foto berhasil disimpan')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto berhasil disimpan')));
           Navigator.pop(context);
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Terjadi error: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi error: ${e.toString()}')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -96,64 +86,64 @@ class _ScanResultPageState extends State<ScanResultPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          children: [
+          children: <Widget>[
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: widget.files.length,
-                itemBuilder: (context, index) {
-                  final f = widget.files[index];
-                  return FutureBuilder<Uint8List>(
-                    future: f.readAsBytes(),
-                    builder: (context, snapshot) {
-                      Widget img;
-                      if (snapshot.hasData) {
-                        img = Image.memory(snapshot.data!, fit: BoxFit.cover);
-                      } else {
-                        img = const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        );
-                      }
-                      return Stack(
-                        children: [
-                          Positioned.fill(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: img,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(12),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) setState(() {});
+                },
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                  ),
+                  itemCount: widget.files.length,
+                  itemBuilder: (context, index) {
+                    final f = widget.files[index];
+                    return FutureBuilder<Uint8List>(
+                      future: f.readAsBytes(),
+                      builder: (context, snapshot) {
+                        Widget img;
+                        if (snapshot.hasData) {
+                          img = Image.memory(snapshot.data!, fit: BoxFit.cover);
+                        } else {
+                          img = const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                        }
+                        return Stack(
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: img,
                               ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(2.0),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(2.0),
+                                  child: Icon(Icons.close, color: Colors.white, size: 16),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 16),
             Row(
-              children: [
+              children: <Widget>[
                 Expanded(
                   child: SecondaryButton(
                     text: 'Ambil foto ulang',
@@ -166,9 +156,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                   child: PrimaryButton(
                     text: 'Simpan',
                     icon: const Icon(Icons.save),
-                    onPressed: _loading
-                        ? null
-                        : () => _uploadFirstImage(context),
+                    onPressed: _loading ? null : () => _uploadFirstImage(context),
                   ),
                 ),
               ],
@@ -179,5 +167,4 @@ class _ScanResultPageState extends State<ScanResultPage> {
     );
   }
 
-  // Images rendered via FutureBuilder above for portability.
 }

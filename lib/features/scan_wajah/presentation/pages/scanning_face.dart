@@ -95,8 +95,15 @@ class _ScanningFaceViewState extends State<_ScanningFaceView>
               _logger.i('CameraStatus: ready');
               final controllerReady = state.controller;
               if (controllerReady == null) {
-                _logger.w('CameraStatus ready but controller is null');
-                return const SizedBox.expand();
+                _logger.w(
+                  'CameraStatus ready but controller is null - attempting re-init',
+                );
+                // Try to re-initialize the camera when controller is unexpectedly null.
+                // Use a microtask to avoid calling during build synchronously.
+                Future.microtask(
+                  () => context.read<FaceRecognitionCubit>().initCamera(),
+                );
+                return const Center(child: CircularProgressIndicator());
               }
               final controller = controllerReady;
               final previewSize = controller.value.previewSize;
