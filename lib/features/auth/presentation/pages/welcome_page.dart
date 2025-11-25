@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gii_dace_recognition/features/auth/presentation/pages/auth_page.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/scan_login.dart';
 import 'package:gii_dace_recognition/widget/primary_button.dart';
 import 'package:gii_dace_recognition/widget/secondary_button.dart';
 
@@ -46,7 +47,12 @@ class WelcomePage extends StatelessWidget {
                 // Menggunakan ikon bawaan Flutter yang mirip dengan ikon scan
                 icon: const Icon(Icons.center_focus_strong_outlined),
                 onPressed: () {
-                  debugPrint("Tombol Scan Wajah ditekan");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ScanLoginPage(),
+                    ),
+                  );
                 },
               ),
 

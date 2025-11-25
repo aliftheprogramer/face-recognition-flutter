@@ -19,6 +19,7 @@ import '../../features/auth/domain/repository/auth_repository.dart';
 import '../../features/auth/domain/usecase/register_usecase.dart';
 import '../../features/auth/domain/usecase/signin_usecases.dart';
 import '../../features/auth/domain/usecase/logout_usecase.dart';
+import '../../features/auth/domain/usecase/face_login_usecase.dart';
 import '../../features/auth/domain/usecase/is_logged_in.dart';
 import '../../features/auth/domain/usecase/is_first_run_usecase.dart';
 import '../../features/auth/domain/usecase/set_first_run_complete_usecase.dart';
@@ -47,6 +48,7 @@ Future<void> setUpServiceLocator() async {
   // Auth usecases
   sl.registerLazySingleton(() => SigninUsecases(sl()));
   sl.registerLazySingleton(() => RegisterUsecase(sl()));
+  sl.registerLazySingleton(() => FaceLoginUsecase(sl()));
   sl.registerLazySingleton(() => LogoutUsecase(sl()));
   sl.registerLazySingleton(() => IsLoggedInUseCase(sl()));
   sl.registerLazySingleton(() => IsFirstRunUsecase(sl()));

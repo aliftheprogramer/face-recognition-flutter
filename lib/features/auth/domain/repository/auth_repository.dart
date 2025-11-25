@@ -13,4 +13,5 @@ abstract class AuthRepository {
   );
   Future<bool> isLoggedIn();
   Future<Either<String, Response>> logout();
+  Future<Either<String, Response>> faceLogin(String filePath);
 }

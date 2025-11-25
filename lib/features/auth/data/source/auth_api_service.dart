@@ -51,4 +51,21 @@ class AuthApiService {
       rethrow;
     }
   }
+
+  Future<Response> faceLogin(String filePath) async {
+    try {
+      _logger.i('[API] POST ${ApiUrls.baseUrl}/auth/face-login');
+      final fileName = filePath.split('/').last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+      return await _client.post(
+        '${ApiUrls.baseUrl}/auth/face-login',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      _logger.e('[API] faceLogin failed', error: e, stackTrace: e.stackTrace);
+      rethrow;
+    }
+  }
 }

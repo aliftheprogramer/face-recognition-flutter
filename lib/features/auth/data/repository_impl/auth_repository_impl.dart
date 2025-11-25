@@ -133,4 +133,55 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(e.toString());
     }
   }
+
+  @override
+  Future<Either<String, Response>> faceLogin(String filePath) async {
+    try {
+      final res = await api.faceLogin(filePath);
+      await _persistAuthPayload(res.data);
+      return Right(res);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data?.toString() ?? e.message ?? 'Face login failed';
+      logger.e('[Repo] faceLogin error: $msg');
+      return Left(msg);
+    } catch (e) {
+      logger.e('[Repo] faceLogin unexpected error', error: e);
+      return Left(e.toString());
+    }
+  }
+
+  Future<void> _persistAuthPayload(dynamic payload) async {
+    if (payload is! Map) return;
+    try {
+      Map data = payload;
+      if (payload['data'] is Map) {
+        data = payload['data'];
+      }
+      String? token;
+      if (payload['access_token'] is String) {
+        token = payload['access_token'];
+      } else if (payload['token'] is String) {
+        token = payload['token'];
+      } else if (data['access_token'] is String) {
+        token = data['access_token'];
+      } else if (data['token'] is String) {
+        token = data['token'];
+      }
+      if (token != null && token.isNotEmpty) {
+        await local.saveToken(token);
+        logger.i('[Repo] Token saved');
+      }
+      Map<String, dynamic>? user;
+      if (payload['user'] is Map) {
+        user = Map<String, dynamic>.from(payload['user']);
+      } else if (data['user'] is Map) {
+        user = Map<String, dynamic>.from(data['user']);
+      }
+      if (user != null) {
+        await local.saveUserJson(jsonEncode(user));
+        logger.i('[Repo] User saved');
+      }
+    } catch (_) {}
+  }
 }
