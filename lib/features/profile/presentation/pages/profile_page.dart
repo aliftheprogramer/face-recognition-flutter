@@ -124,80 +124,84 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           // --- LAYER 3: Konten Putih (Scrollable) ---
-          // Menggunakan SingleChildScrollView agar bisa di-scroll
-          SingleChildScrollView(
-            // Padding top dibuat besar supaya konten mulai DI BAWAH header
-            padding: const EdgeInsets.only(top: 200),
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-              ),
-              child: Column(
-                children: [
-                  // Jarak kosong untuk memberi ruang bagi foto profil yang menumpuk
-                  const SizedBox(height: 60),
+          // Menggunakan RefreshIndicator + SingleChildScrollView agar bisa di-pull-to-refresh
+          RefreshIndicator(
+            onRefresh: _fetchProfile,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              // Padding top dibuat besar supaya konten mulai DI BAWAH header
+              padding: const EdgeInsets.only(top: 200),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: Column(
+                  children: [
+                    // Jarak kosong untuk memberi ruang bagi foto profil yang menumpuk
+                    const SizedBox(height: 60),
 
-                  // Nama User
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                    // Nama User
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // --- GROUP MENU 1 ---
-                  _buildMenuContainer(
-                    children: [
-                      ItemProfileWidget(
-                        icon: Icons.person_outline,
-                        title: 'Edit Profil',
-                        onTap: () {},
-                      ),
-                      ItemProfileWidget(
-                        icon: Icons.location_on_outlined,
-                        title: 'Alamat',
-                        showDivider: false, // Item terakhir di grup
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
+                    // --- GROUP MENU 1 ---
+                    _buildMenuContainer(
+                      children: [
+                        ItemProfileWidget(
+                          icon: Icons.person_outline,
+                          title: 'Edit Profil',
+                          onTap: () {},
+                        ),
+                        ItemProfileWidget(
+                          icon: Icons.location_on_outlined,
+                          title: 'Alamat',
+                          showDivider: false, // Item terakhir di grup
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // --- GROUP MENU 2 ---
-                  _buildMenuContainer(
-                    children: [
-                      ItemProfileWidget(
-                        icon: Icons.notifications_none_outlined,
-                        title: 'Notifikasi',
-                        onTap: () {},
-                      ),
-                      ItemProfileWidget(
-                        icon: Icons.vpn_key_outlined, // Ikon kunci/sandi
-                        title: 'Sandi',
-                        onTap: () {},
-                      ),
-                      ItemProfileWidget(
-                        icon: Icons.translate,
-                        title: 'Bahasa',
-                        onTap: () {},
-                      ),
-                      ItemProfileWidget(
-                        icon: Icons.logout,
-                        title: 'Keluar Akun',
-                        showDivider: false,
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
+                    // --- GROUP MENU 2 ---
+                    _buildMenuContainer(
+                      children: [
+                        ItemProfileWidget(
+                          icon: Icons.notifications_none_outlined,
+                          title: 'Notifikasi',
+                          onTap: () {},
+                        ),
+                        ItemProfileWidget(
+                          icon: Icons.vpn_key_outlined, // Ikon kunci/sandi
+                          title: 'Sandi',
+                          onTap: () {},
+                        ),
+                        ItemProfileWidget(
+                          icon: Icons.translate,
+                          title: 'Bahasa',
+                          onTap: () {},
+                        ),
+                        ItemProfileWidget(
+                          icon: Icons.logout,
+                          title: 'Keluar Akun',
+                          showDivider: false,
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 40), // Jarak bawah
-                ],
+                    const SizedBox(height: 40), // Jarak bawah
+                  ],
+                ),
               ),
             ),
           ),
