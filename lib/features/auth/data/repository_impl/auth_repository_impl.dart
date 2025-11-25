@@ -114,4 +114,23 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<bool> isLoggedIn() async {
     return await local.isLoggedIn();
   }
+
+  @override
+  Future<Either<String, Response>> logout() async {
+    try {
+      final res = await api.logout();
+      // clear local storage
+      await local.clearToken();
+      await local.clearUser();
+      logger.i('[Repo] Logged out and cleared local data');
+      return Right(res);
+    } on DioException catch (e) {
+      final msg = e.response?.data?.toString() ?? e.message ?? 'Logout failed';
+      logger.e('[Repo] logout error: $msg');
+      return Left(msg);
+    } catch (e) {
+      logger.e('[Repo] logout unexpected error', error: e);
+      return Left(e.toString());
+    }
+  }
 }

@@ -9,6 +9,8 @@ abstract class AuthRepository {
   Future<void> setFirstRunComplete();
   Future<Either<String, Response>> signIn(LoginRequestModel loginRequestModel);
   Future<Either<String, Response>> register(
-      RegisterRequestModel registerRequestModel);
+    RegisterRequestModel registerRequestModel,
+  );
   Future<bool> isLoggedIn();
+  Future<Either<String, Response>> logout();
 }

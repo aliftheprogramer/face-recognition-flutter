@@ -37,13 +37,17 @@ class _ScanResultPageState extends State<ScanResultPage> {
     String userId;
     try {
       final m = jsonDecode(userJson) as Map<String, dynamic>;
-      userId = (m['id'] ?? m['user_id'] ?? m['uid'] ?? m['userId'])?.toString() ?? '';
+      userId =
+          (m['id'] ?? m['user_id'] ?? m['uid'] ?? m['userId'])?.toString() ??
+          '';
     } catch (_) {
       userId = '';
     }
 
     if (userId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User id tidak tersedia.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User id tidak tersedia.')));
       return;
     }
 
@@ -53,17 +57,30 @@ class _ScanResultPageState extends State<ScanResultPage> {
     try {
       final usecase = sl<RegisterFaceUsecase>();
       final res = await usecase(param: {'userId': userId, 'file': file});
+      if (!mounted) return;
       res.fold(
         (err) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal upload: $err')));
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Gagal upload: $err')));
+          }
         },
         (FaceRecognitionEntity ent) async {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto berhasil disimpan')));
-          Navigator.pop(context);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Foto berhasil disimpan')),
+            );
+            Navigator.pop(context);
+          }
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi error: ${e.toString()}')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi error: ${e.toString()}')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -109,7 +126,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
                         if (snapshot.hasData) {
                           img = Image.memory(snapshot.data!, fit: BoxFit.cover);
                         } else {
-                          img = const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                          img = const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          );
                         }
                         return Stack(
                           children: [
@@ -129,7 +148,11 @@ class _ScanResultPageState extends State<ScanResultPage> {
                                 ),
                                 child: const Padding(
                                   padding: EdgeInsets.all(2.0),
-                                  child: Icon(Icons.close, color: Colors.white, size: 16),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -156,7 +179,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
                   child: PrimaryButton(
                     text: 'Simpan',
                     icon: const Icon(Icons.save),
-                    onPressed: _loading ? null : () => _uploadFirstImage(context),
+                    onPressed: _loading
+                        ? null
+                        : () => _uploadFirstImage(context),
                   ),
                 ),
               ],
@@ -166,5 +191,4 @@ class _ScanResultPageState extends State<ScanResultPage> {
       ),
     );
   }
-
 }

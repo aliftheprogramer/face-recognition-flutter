@@ -41,4 +41,14 @@ class AuthApiService {
       rethrow;
     }
   }
+
+  Future<Response> logout() async {
+    try {
+      _logger.i('[API] POST ${ApiUrls.baseUrl}/auth/logout');
+      return await _client.post('${ApiUrls.baseUrl}/auth/logout');
+    } on DioException catch (e) {
+      _logger.e('[API] logout failed', error: e, stackTrace: e.stackTrace);
+      rethrow;
+    }
+  }
 }

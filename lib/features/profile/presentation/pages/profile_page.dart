@@ -7,6 +7,9 @@ import '../../../auth/data/source/auth_local_service.dart';
 import '../../../auth/data/source/auth_api_service.dart';
 import '../../../../core/constant/api_urls.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
+import 'package:gii_dace_recognition/features/auth/presentation/pages/welcome_page.dart';
+import '../../../auth/domain/usecase/logout_usecase.dart';
+import 'package:gii_dace_recognition/common/bloc/auth/auth_cubit.dart';
 // Pastikan path import ini sesuai dengan struktur folder kamu
 // import 'path/to/item_profile_widget.dart';
 
@@ -194,7 +197,63 @@ class _ProfilePageState extends State<ProfilePage> {
                           icon: Icons.logout,
                           title: 'Keluar Akun',
                           showDivider: false,
-                          onTap: () {},
+                          onTap: () async {
+                            // show loading dialog
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (_) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                            try {
+                              final res = await sl<LogoutUsecase>().call();
+                              if (!mounted) return;
+                              res.fold(
+                                (err) {
+                                  if (mounted) Navigator.of(context).pop();
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Logout gagal: $err'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                (r) async {
+                                  // on success clear local and go to welcome screen
+                                  try {
+                                    await sl<AuthLocalService>().clearToken();
+                                    await sl<AuthLocalService>().clearUser();
+                                  } catch (_) {}
+                                  try {
+                                    await sl<AuthStateCubit>()
+                                        .checkAuthStatus();
+                                  } catch (_) {}
+                                  if (!mounted) return;
+                                  Navigator.of(context).pop();
+                                  if (!mounted) return;
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (_) => const WelcomePage(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                },
+                              );
+                            } catch (e) {
+                              if (mounted) Navigator.of(context).pop();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Logout error: ${e.toString()}',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
                         ),
                       ],
                     ),
