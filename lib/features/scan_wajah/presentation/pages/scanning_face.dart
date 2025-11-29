@@ -37,20 +37,20 @@ class _ScanningFaceView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _logger = sl<Logger>();
+    final logger = sl<Logger>();
     return LifecycleHandler(
       onDispose: () {
-        _logger.i('ScanningFaceView: dispose - disposing controller via cubit');
+        logger.i('ScanningFaceView: dispose - disposing controller via cubit');
         try {
           context.read<FaceRecognitionCubit>().disposeController();
         } catch (_) {}
       },
       onResume: () {
-        _logger.i('ScanningFaceView: resumed - re-initializing camera');
+        logger.i('ScanningFaceView: resumed - re-initializing camera');
         context.read<FaceRecognitionCubit>().initCamera();
       },
       onPause: () {
-        _logger.i('ScanningFaceView: paused - disposing camera controller');
+        logger.i('ScanningFaceView: paused - disposing camera controller');
         context.read<FaceRecognitionCubit>().disposeController();
       },
       child: Scaffold(
@@ -60,7 +60,7 @@ class _ScanningFaceView extends StatelessWidget {
             switch (state.cameraStatus) {
               case CameraStatus.initial:
               case CameraStatus.loading:
-                _logger.i('CameraStatus: loading');
+                logger.i('CameraStatus: loading');
                 return const SizedBox.expand();
               case CameraStatus.error:
                 return Center(
@@ -70,7 +70,7 @@ class _ScanningFaceView extends StatelessWidget {
                   ),
                 );
               case CameraStatus.ready:
-                _logger.i('CameraStatus: ready');
+                logger.i('CameraStatus: ready');
                 final controllerReady = state.controller;
                 if (controllerReady == null) {
                   // Try to re-initialize the camera when controller is unexpectedly null.
