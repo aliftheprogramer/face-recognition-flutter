@@ -84,7 +84,7 @@ class StartScan extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       PrimaryButton(
-                        text: "Masuk dengan scan wajah",
+                        text: "Ambil dari kamera",
                         icon: const Icon(
                           Icons.camera_alt_outlined,
                           size: 24,

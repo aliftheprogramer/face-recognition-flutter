@@ -4,6 +4,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:gii_dace_recognition/common/bloc/navigation/navigation_cubit.dart'
+    as nav;
+import 'package:gii_dace_recognition/common/pages/main_screen.dart'
+    as main_screen;
 import '../../../../widget/primary_button.dart';
 import '../../../../widget/secondary_button.dart';
 import '../../../../core/services/services_locator.dart';
@@ -71,7 +75,15 @@ class _ScanResultPageState extends State<ScanResultPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Foto berhasil disimpan')),
             );
-            Navigator.pop(context);
+            // Navigate to MainScreen and show Profile tab
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => const main_screen.MainScreen(
+                  initialTab: nav.NavigationTab.profil,
+                ),
+              ),
+              (route) => false,
+            );
           }
         },
       );

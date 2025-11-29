@@ -5,13 +5,25 @@ import 'package:gii_dace_recognition/features/profile/presentation/pages/profile
 import 'package:gii_dace_recognition/widget/bottom_navigator_widget.dart';
 
 class MainScreen extends StatelessWidget {
-  const MainScreen({super.key});
+  final NavigationTab? initialTab;
+  const MainScreen({super.key, this.initialTab});
 
   @override
   Widget build(BuildContext context) {
     // Kita bungkus dengan BlocProvider agar BottomNavigatorWidget bisa akses Cubitnya
     return BlocProvider(
-      create: (context) => NavigationCubit(),
+      create: (context) {
+        final cubit = NavigationCubit();
+        if (initialTab != null) {
+          final idx = initialTab == NavigationTab.beranda
+              ? 0
+              : initialTab == NavigationTab.aktivitas
+              ? 1
+              : 2;
+          cubit.getNavBarItem(idx);
+        }
+        return cubit;
+      },
       child: Scaffold(
         // Body akan berubah sesuai state index
         body: BlocBuilder<NavigationCubit, NavigationState>(

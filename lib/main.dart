@@ -4,9 +4,6 @@ import 'package:gii_dace_recognition/common/bloc/auth/auth_cubit.dart';
 import 'package:gii_dace_recognition/common/bloc/auth/auth_state.dart';
 import 'package:gii_dace_recognition/common/pages/main_screen.dart';
 import 'package:gii_dace_recognition/features/auth/presentation/pages/welcome_page.dart';
-import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
-
-import 'features/auth/presentation/pages/auth_page.dart';
 import 'core/services/services_locator.dart';
 
 Future<void> main() async {
@@ -18,7 +15,6 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
