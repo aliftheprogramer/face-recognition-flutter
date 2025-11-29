@@ -16,6 +16,49 @@ class ScanLoginPage extends StatefulWidget {
   State<ScanLoginPage> createState() => _ScanLoginPageState();
 }
 
+class FaceGuidePainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashLength;
+  final double gapLength;
+
+  const FaceGuidePainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.dashLength,
+    required this.gapLength,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..color = color
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final path = Path()..addOval(rect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final double next = distance + dashLength;
+        final extract = metric.extractPath(distance, next);
+        canvas.drawPath(extract, paint);
+        distance = next + gapLength;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FaceGuidePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashLength != dashLength ||
+        oldDelegate.gapLength != gapLength;
+  }
+}
+
 class _ScanLoginPageState extends State<ScanLoginPage>
     with WidgetsBindingObserver {
   CameraController? _controller;
@@ -160,7 +203,76 @@ class _ScanLoginPageState extends State<ScanLoginPage>
                 children: [
                   Expanded(
                     child: controller != null && controller.value.isInitialized
-                        ? CameraPreview(controller)
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // Camera preview scaled to cover
+                              FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width:
+                                      controller.value.previewSize?.height ??
+                                      MediaQuery.of(context).size.height,
+                                  height:
+                                      controller.value.previewSize?.width ??
+                                      MediaQuery.of(context).size.width,
+                                  child: CameraPreview(controller),
+                                ),
+                              ),
+
+                              // Face guide overlay
+                              Align(
+                                alignment: Alignment.center,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final double guideWidth =
+                                        constraints.maxWidth * 0.78;
+                                    final double guideHeight =
+                                        constraints.maxHeight * 0.52;
+                                    return SizedBox(
+                                      width: guideWidth,
+                                      height: guideHeight,
+                                      child: const CustomPaint(
+                                        painter: FaceGuidePainter(
+                                          color: Colors.white70,
+                                          strokeWidth: 3,
+                                          dashLength: 10,
+                                          gapLength: 6,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+
+                              // Small pill hint near bottom of guide
+                              Positioned(
+                                bottom:
+                                    MediaQuery.of(context).size.height * 0.26,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.4),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'Arahkan wajah ke dalam lingkaran',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
                         : const Center(
                             child: Text(
                               'Kamera tidak tersedia',
