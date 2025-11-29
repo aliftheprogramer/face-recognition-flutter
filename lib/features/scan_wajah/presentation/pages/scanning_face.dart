@@ -6,6 +6,10 @@ import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/face
 import '../cubit/face_recognition_cubit.dart';
 import 'scan_result.dart';
 import 'package:gii_dace_recognition/core/services/services_locator.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/widget/circle_icon_button.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/widget/shutter_button.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/widget/face_guide_painter.dart';
+import 'package:gii_dace_recognition/features/scan_wajah/presentation/widget/lifecycle_handler.dart';
 
 class ScanningFacePage extends StatelessWidget {
   const ScanningFacePage({super.key});
@@ -28,349 +32,190 @@ class ScanningFacePage extends StatelessWidget {
   }
 }
 
-class _ScanningFaceView extends StatefulWidget {
+class _ScanningFaceView extends StatelessWidget {
   const _ScanningFaceView();
 
   @override
-  State<_ScanningFaceView> createState() => _ScanningFaceViewState();
+  Widget build(BuildContext context) {
+    final _logger = sl<Logger>();
+    return LifecycleHandler(
+      onDispose: () {
+        _logger.i('ScanningFaceView: dispose - disposing controller via cubit');
+        try {
+          context.read<FaceRecognitionCubit>().disposeController();
+        } catch (_) {}
+      },
+      onResume: () {
+        _logger.i('ScanningFaceView: resumed - re-initializing camera');
+        context.read<FaceRecognitionCubit>().initCamera();
+      },
+      onPause: () {
+        _logger.i('ScanningFaceView: paused - disposing camera controller');
+        context.read<FaceRecognitionCubit>().disposeController();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: BlocBuilder<FaceRecognitionCubit, FaceRecognitionState>(
+          builder: (context, state) {
+            switch (state.cameraStatus) {
+              case CameraStatus.initial:
+              case CameraStatus.loading:
+                _logger.i('CameraStatus: loading');
+                return const SizedBox.expand();
+              case CameraStatus.error:
+                return Center(
+                  child: Text(
+                    state.errorMessage ?? 'Gagal memuat kamera',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              case CameraStatus.ready:
+                _logger.i('CameraStatus: ready');
+                final controllerReady = state.controller;
+                if (controllerReady == null) {
+                  // Try to re-initialize the camera when controller is unexpectedly null.
+                  Future.microtask(
+                    () => context.read<FaceRecognitionCubit>().initCamera(),
+                  );
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final controller = controllerReady;
+                final previewSize = controller.value.previewSize;
+                return _CameraView(
+                  controller: controller,
+                  previewSize: previewSize,
+                );
+            }
+          },
+        ),
+      ),
+    );
+  }
 }
 
-class _ScanningFaceViewState extends State<_ScanningFaceView>
-    with WidgetsBindingObserver {
-  Logger get _logger => sl<Logger>();
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _logger.i('ScanningFaceView: initState - observer added');
-  }
+// using shared LifecycleHandler from presentation/widget/lifecycle_handler.dart
+
+class _CameraView extends StatelessWidget {
+  final CameraController controller;
+  final Size? previewSize;
+
+  const _CameraView({required this.controller, required this.previewSize});
 
   @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _logger.i(
-      'ScanningFaceView: dispose - removing observer and disposing controller',
-    );
-    try {
-      context.read<FaceRecognitionCubit>().disposeController();
-    } catch (e, st) {
-      _logger.w('Error while disposing controller: $e\n$st');
-    }
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  Widget build(BuildContext context) {
     final cubit = context.read<FaceRecognitionCubit>();
-    _logger.i('AppLifecycleState changed: $state');
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      _logger.i('App going to background - disposing camera controller');
-      cubit.disposeController();
-    } else if (state == AppLifecycleState.resumed) {
-      _logger.i('App resumed - re-initializing camera');
-      cubit.initCamera();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: BlocBuilder<FaceRecognitionCubit, FaceRecognitionState>(
-        builder: (context, state) {
-          switch (state.cameraStatus) {
-            case CameraStatus.initial:
-            case CameraStatus.loading:
-              _logger.i('CameraStatus: loading');
-              return const SizedBox.expand();
-            case CameraStatus.error:
-              return Center(
-                child: Text(
-                  state.errorMessage ?? 'Gagal memuat kamera',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              );
-            case CameraStatus.ready:
-              _logger.i('CameraStatus: ready');
-              final controllerReady = state.controller;
-              if (controllerReady == null) {
-                _logger.w(
-                  'CameraStatus ready but controller is null - attempting re-init',
-                );
-                // Try to re-initialize the camera when controller is unexpectedly null.
-                // Use a microtask to avoid calling during build synchronously.
-                Future.microtask(
-                  () => context.read<FaceRecognitionCubit>().initCamera(),
-                );
-                return const Center(child: CircularProgressIndicator());
-              }
-              final controller = controllerReady;
-              final previewSize = controller.value.previewSize;
-              // Full-screen camera with overlays (guide + controls)
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Camera preview (portrait-friendly)
-                  FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width:
-                          previewSize?.height ??
-                          MediaQuery.of(context).size.height,
-                      height:
-                          previewSize?.width ??
-                          MediaQuery.of(context).size.width,
-                      child: CameraPreview(controller),
-                    ),
-                  ),
-
-                  // Top-left back button
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: _CircleIconButton(
-                      icon: Icons.arrow_back,
-                      onTap: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-
-                  // Center text instruction
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.18,
-                    left: 0,
-                    right: 0,
-                    child: const Center(
-                      child: Text(
-                        'Posisi wajah lurus kedepan',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Dashed ellipse face guide
-                  Align(
-                    alignment: Alignment.center,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final double guideWidth = constraints.maxWidth * 0.78;
-                        final double guideHeight = constraints.maxHeight * 0.52;
-                        return SizedBox(
-                          width: guideWidth,
-                          height: guideHeight,
-                          child: const CustomPaint(
-                            painter: FaceGuidePainter(
-                              color: Colors.white70,
-                              strokeWidth: 3,
-                              dashLength: 10,
-                              gapLength: 6,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Small pill hint near bottom of guide
-                  Positioned(
-                    bottom: MediaQuery.of(context).size.height * 0.26,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Arahkan wajah ke dalam lingkaran',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Bottom controls bar
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.45),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Left: flash toggle
-                          _CircleIconButton(
-                            icon: Icons.flash_on,
-                            onTap: () => context
-                                .read<FaceRecognitionCubit>()
-                                .toggleFlash(),
-                          ),
-                          // Center: shutter (no-op)
-                          _ShutterButton(
-                            onTap: () async {
-                              final cubit = context
-                                  .read<FaceRecognitionCubit>();
-                              _logger.i('Shutter pressed - capturing image');
-                              try {
-                                final xfile = await cubit.captureAndSave();
-                                if (xfile == null) {
-                                  _logger.w(
-                                    'Capture failed - returned null XFile',
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Gagal mengambil gambar'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                _logger.i('Capture saved: ${xfile.path}');
-                                final files = cubit.state.captures;
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ScanResultPage(files: files),
-                                  ),
-                                );
-                              } catch (e, st) {
-                                _logger.e('Exception during capture: $e\n$st');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Gagal mengambil gambar'),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                          // Right: switch camera
-                          _CircleIconButton(
-                            icon: Icons.cameraswitch,
-                            onTap: () {
-                              _logger.i('Camera switch requested');
-                              context
-                                  .read<FaceRecognitionCubit>()
-                                  .switchCamera();
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-          }
-        },
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CircleIconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: const BoxDecoration(
-          color: Color(0xFF2D64F0),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _ShutterButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ShutterButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 76,
-        height: 76,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 4),
-        ),
-        child: Container(
-          margin: const EdgeInsets.all(6),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
+    final _logger = sl<Logger>();
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: previewSize?.height ?? MediaQuery.of(context).size.height,
+            height: previewSize?.width ?? MediaQuery.of(context).size.width,
+            child: CameraPreview(controller),
           ),
         ),
-      ),
+        Positioned(
+          top: 16,
+          left: 16,
+          child: CircleIconButton(
+            icon: Icons.arrow_back,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).size.height * 0.18,
+          left: 0,
+          right: 0,
+          child: const Center(
+            child: Text(
+              'Posisi wajah lurus kedepan',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.center,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double guideWidth = constraints.maxWidth * 0.78;
+              final double guideHeight = constraints.maxHeight * 0.52;
+              return SizedBox(
+                width: guideWidth,
+                height: guideHeight,
+                child: const CustomPaint(
+                  painter: FaceGuidePainter(
+                    color: Colors.white70,
+                    strokeWidth: 3,
+                    dashLength: 10,
+                    gapLength: 6,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.45)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleIconButton(
+                  icon: Icons.flash_on,
+                  onTap: () => cubit.toggleFlash(),
+                ),
+                ShutterButton(
+                  onTap: () async {
+                    _logger.i('Shutter pressed - capturing image');
+                    try {
+                      final xfile = await cubit.captureAndSave();
+                      if (xfile == null) {
+                        _logger.w('Capture failed - returned null XFile');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Gagal mengambil gambar'),
+                          ),
+                        );
+                        return;
+                      }
+                      _logger.i('Capture saved: ${xfile.path}');
+                      final files = cubit.state.captures;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ScanResultPage(files: files),
+                        ),
+                      );
+                    } catch (e, st) {
+                      _logger.e('Exception during capture: $e\n$st');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Gagal mengambil gambar')),
+                      );
+                    }
+                  },
+                ),
+                CircleIconButton(
+                  icon: Icons.cameraswitch,
+                  onTap: () {
+                    _logger.i('Camera switch requested');
+                    cubit.switchCamera();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
-  }
-}
-
-class FaceGuidePainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double dashLength;
-  final double gapLength;
-
-  const FaceGuidePainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.dashLength,
-    required this.gapLength,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..color = color
-      ..strokeCap = StrokeCap.round;
-
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    final path = Path()..addOval(rect);
-    for (final metric in path.computeMetrics()) {
-      double distance = 0.0;
-      while (distance < metric.length) {
-        final double next = distance + dashLength;
-        final extract = metric.extractPath(distance, next);
-        canvas.drawPath(extract, paint);
-        distance = next + gapLength;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant FaceGuidePainter oldDelegate) {
-    return oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth ||
-        oldDelegate.dashLength != dashLength ||
-        oldDelegate.gapLength != gapLength;
   }
 }
