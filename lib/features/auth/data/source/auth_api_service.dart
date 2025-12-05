@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 import '../../../../core/constant/api_urls.dart';
@@ -65,6 +67,26 @@ class AuthApiService {
       );
     } on DioException catch (e) {
       _logger.e('[API] faceLogin failed', error: e, stackTrace: e.stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<Response> faceLoginBytes(Uint8List bytes, String filename) async {
+    try {
+      _logger.i('[API] POST ${ApiUrls.baseUrl}/auth/face-login (bytes)');
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      return await _client.post(
+        '${ApiUrls.baseUrl}/auth/face-login',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      _logger.e(
+        '[API] faceLoginBytes failed',
+        error: e,
+        stackTrace: e.stackTrace,
+      );
       rethrow;
     }
   }

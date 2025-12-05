@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gii_dace_recognition/core/services/services_locator.dart';
 import 'package:gii_dace_recognition/features/auth/domain/usecase/face_login_usecase.dart';
+import 'package:gii_dace_recognition/features/auth/domain/usecase/face_login_bytes_usecase.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/login_camera_cubit.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/login_camera_state.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/cubit/face_recognition_state.dart';
@@ -45,8 +47,16 @@ class _ScanLoginView extends StatelessWidget {
     }
 
     try {
-      final dartz.Either<String, Response> res = await sl<FaceLoginUsecase>()
-          .call(param: xfile.path);
+      dartz.Either<String, Response> res;
+      if (kIsWeb) {
+        final bytes = await xfile.readAsBytes();
+        final name = xfile.name.isNotEmpty ? xfile.name : 'face.jpg';
+        res = await sl<FaceLoginBytesUsecase>().call(
+          param: {'bytes': bytes, 'filename': name},
+        );
+      } else {
+        res = await sl<FaceLoginUsecase>().call(param: xfile.path);
+      }
       if (!context.mounted) return;
       await res.fold(
         (err) async {

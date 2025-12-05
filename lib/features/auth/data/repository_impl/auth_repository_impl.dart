@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'dart:typed_data';
 
 import '../../domain/repository/auth_repository.dart';
 import '../model/login_request_model.dart';
@@ -147,6 +148,26 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(msg);
     } catch (e) {
       logger.e('[Repo] faceLogin unexpected error', error: e);
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, Response>> faceLoginBytes(
+    Uint8List bytes,
+    String filename,
+  ) async {
+    try {
+      final res = await api.faceLoginBytes(bytes, filename);
+      await _persistAuthPayload(res.data);
+      return Right(res);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data?.toString() ?? e.message ?? 'Face login failed';
+      logger.e('[Repo] faceLoginBytes error: $msg');
+      return Left(msg);
+    } catch (e) {
+      logger.e('[Repo] faceLoginBytes unexpected error', error: e);
       return Left(e.toString());
     }
   }
