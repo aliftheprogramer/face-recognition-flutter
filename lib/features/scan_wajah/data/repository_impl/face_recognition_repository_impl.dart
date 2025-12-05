@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:dartz/dartz.dart';
@@ -67,6 +68,25 @@ class FaceRecognitionRepositoryImpl implements FaceRecognitionRepository {
       return Right(result);
     } on Exception catch (e) {
       logger.e('[Repo] Register Face error: $e');
+      return Left('Gagal mendaftarkan wajah: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, FaceRecognitionEntity>> registerFaceBytes(
+    String userId,
+    Uint8List bytes,
+    String filename,
+  ) async {
+    try {
+      final result = await remoteDataSource.registerFaceBytes(
+        userId,
+        bytes,
+        filename,
+      );
+      return Right(result);
+    } on Exception catch (e) {
+      logger.e('[Repo] Register Face (bytes) error: $e');
       return Left('Gagal mendaftarkan wajah: $e');
     }
   }

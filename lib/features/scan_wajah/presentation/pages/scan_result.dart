@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -13,6 +14,7 @@ import '../../../../widget/secondary_button.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../features/auth/data/source/auth_local_service.dart';
 import '../../domain/usecase/register_face_usecase.dart';
+import '../../domain/usecase/register_face_bytes_usecase.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/domain/entity/face_recognition_entity.dart';
 
 class ScanResultPage extends StatefulWidget {
@@ -59,8 +61,19 @@ class _ScanResultPageState extends State<ScanResultPage> {
 
     final file = File(widget.files.first.path);
     try {
-      final usecase = sl<RegisterFaceUsecase>();
-      final res = await usecase(param: {'userId': userId, 'file': file});
+      final res = kIsWeb
+          ? await sl<RegisterFaceBytesUsecase>().call(
+              param: {
+                'userId': userId,
+                'bytes': await widget.files.first.readAsBytes(),
+                'filename': widget.files.first.name.isNotEmpty
+                    ? widget.files.first.name
+                    : 'face.jpg',
+              },
+            )
+          : await sl<RegisterFaceUsecase>().call(
+              param: {'userId': userId, 'file': file},
+            );
       if (!mounted) return;
       res.fold(
         (err) {

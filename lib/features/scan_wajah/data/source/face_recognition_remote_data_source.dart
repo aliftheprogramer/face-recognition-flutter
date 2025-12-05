@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
@@ -9,6 +10,11 @@ import '../../../scan_wajah/domain/entity/face_recognition_entity.dart';
 
 abstract class FaceRecognitionRemoteDataSource {
   Future<FaceRecognitionEntity> registerFace(String userId, File image);
+  Future<FaceRecognitionEntity> registerFaceBytes(
+    String userId,
+    Uint8List bytes,
+    String filename,
+  );
 }
 
 class FaceRecognitionRemoteDataSourceImpl
@@ -58,6 +64,37 @@ class FaceRecognitionRemoteDataSourceImpl
       return FaceRecognitionEntity.registrationSuccess();
     } on DioException catch (e) {
       logger.e('[RemoteDataSource] registerFace error: ${e.message}');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<FaceRecognitionEntity> registerFaceBytes(
+    String userId,
+    Uint8List bytes,
+    String filename,
+  ) async {
+    try {
+      final form = FormData.fromMap({
+        'files': [MultipartFile.fromBytes(bytes, filename: filename)],
+      });
+
+      logger.i('[API] Upload face (bytes) to ${ApiUrls.uploadFace}');
+
+      final res = await client.post(
+        ApiUrls.uploadFace,
+        data: form,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
+
+      final data = res.data;
+      if (data is Map &&
+          (data['status'] == 'success' || data['status'] == 'ok')) {
+        return FaceRecognitionEntity.registrationSuccess();
+      }
+      return FaceRecognitionEntity.registrationSuccess();
+    } on DioException catch (e) {
+      logger.e('[RemoteDataSource] registerFaceBytes error: ${e.message}');
       rethrow;
     }
   }

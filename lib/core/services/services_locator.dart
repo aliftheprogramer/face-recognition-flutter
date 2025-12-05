@@ -27,6 +27,7 @@ import '../../features/auth/domain/usecase/set_first_run_complete_usecase.dart';
 import '../../common/bloc/auth/auth_cubit.dart';
 import '../../features/scan_wajah/data/source/face_recognition_remote_data_source.dart';
 import '../../features/scan_wajah/domain/usecase/register_face_usecase.dart';
+import '../../features/scan_wajah/domain/usecase/register_face_bytes_usecase.dart';
 
 final sl = GetIt.instance;
 
@@ -76,6 +77,7 @@ Future<void> setUpServiceLocator() async {
   sl.registerLazySingleton(() => GetAvailableCamerasUsecase(sl()));
   sl.registerLazySingleton(() => RecognizeFaceUsecase(sl()));
   sl.registerLazySingleton(() => RegisterFaceUsecase(sl()));
+  sl.registerLazySingleton(() => RegisterFaceBytesUsecase(sl()));
   sl.registerFactory(() => FaceRecognitionCubit());
   sl.registerLazySingleton(() => DetectFacesUsecase(sl()));
 }
