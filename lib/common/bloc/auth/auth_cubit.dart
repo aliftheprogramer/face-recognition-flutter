@@ -30,13 +30,28 @@ class AuthStateCubit extends Cubit<AuthState> {
     // Prevent duplicate initialization if already resolved.
     if (state is! AppInitialState) return;
     try {
+      // IMPORTANT: Check if user is logged in FIRST
+      // This ensures that users who have a token stay authenticated
+      // even if it's their "first run" (e.g., after reinstalling)
+      final bool isLoggedIn = await sl<IsLoggedInUseCase>()
+          .call(param: NoParams())
+          .timeout(const Duration(seconds: 5));
+
+      if (isLoggedIn) {
+        // User has a valid token, go to main screen
+        emit(Authenticated());
+        return;
+      }
+
+      // No token found, check if this is first run
       final bool isFirstRun = await sl<IsFirstRunUsecase>()
           .call(param: NoParams())
           .timeout(const Duration(seconds: 5));
+
       if (isFirstRun) {
         emit(FirstRun());
       } else {
-        await checkAuthStatus();
+        emit(UnAuthenticated());
       }
     } catch (_) {
       // Fallback: treat as unauthenticated if anything fails.

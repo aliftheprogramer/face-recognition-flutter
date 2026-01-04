@@ -52,4 +52,23 @@ class FaceRepositoryImpl implements FaceRepository {
       return Left(e.toString());
     }
   }
+
+  @override
+  Future<Either<String, void>> deleteAllFaces() async {
+    try {
+      logger.i('[FaceRepo] Deleting all user faces...');
+      await api.deleteAllFaces();
+
+      logger.i('[FaceRepo] Successfully deleted all faces');
+      return const Right(null);
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data?.toString() ?? e.message ?? 'Failed to delete faces';
+      logger.e('[FaceRepo] deleteAllFaces error: $msg');
+      return Left(msg);
+    } catch (e) {
+      logger.e('[FaceRepo] deleteAllFaces unexpected error', error: e);
+      return Left(e.toString());
+    }
+  }
 }

@@ -100,4 +100,18 @@ class AuthApiService {
       rethrow;
     }
   }
+
+  Future<Response> deleteAllFaces() async {
+    try {
+      _logger.i('[API] DELETE ${ApiUrls.baseUrl}/face/delete-faces');
+      return await _client.delete('${ApiUrls.baseUrl}/face/delete-faces');
+    } on DioException catch (e) {
+      _logger.e(
+        '[API] deleteAllFaces failed',
+        error: e,
+        stackTrace: e.stackTrace,
+      );
+      rethrow;
+    }
+  }
 }

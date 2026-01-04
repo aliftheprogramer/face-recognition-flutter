@@ -6,6 +6,7 @@ import '../../../../core/services/services_locator.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../../domain/entity/face_entity.dart';
 import '../../domain/usecase/get_my_faces_usecase.dart';
+import '../../domain/usecase/delete_all_faces_usecase.dart';
 
 class MyFacesPage extends StatefulWidget {
   const MyFacesPage({super.key});
@@ -69,6 +70,81 @@ class _MyFacesPageState extends State<MyFacesPage> {
     return '$base/$filepath';
   }
 
+  Future<void> _deleteAllFaces() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Semua Wajah?'),
+        content: const Text(
+          'Apakah Anda yakin ingin menghapus semua wajah yang terdaftar? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      _logger.i('🗑️ Deleting all faces...');
+      final result = await sl<DeleteAllFacesUseCase>().call(param: NoParams());
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      result.fold(
+        (error) {
+          _logger.e('❌ Failed to delete faces: $error');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus wajah: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+        (_) {
+          _logger.i('✅ All faces deleted successfully');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Semua wajah berhasil dihapus'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Reload faces
+          _loadFaces();
+        },
+      );
+    } catch (e) {
+      _logger.e('❌ Error deleting faces: $e');
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,6 +165,15 @@ class _MyFacesPageState extends State<MyFacesPage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_forever, color: Colors.white),
+            onPressed: (_faces != null && _faces!.isNotEmpty)
+                ? _deleteAllFaces
+                : null,
+            tooltip: 'Hapus Semua Wajah',
+          ),
+        ],
       ),
       body: _buildBody(),
     );
