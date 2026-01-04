@@ -40,19 +40,44 @@ class LoggerInterceptor extends Interceptor {
 
     // 2. Cek apakah token ada. Support both 'token' and 'access_token' keys for compatibility.
     String? token;
+
+    logger.d('🔍 Checking for token in SharedPreferences...');
+    logger.d('Keys in SharedPreferences: ${sharedPreferences.getKeys()}');
+
     if (sharedPreferences.containsKey('token')) {
       token = sharedPreferences.getString('token');
+      logger.i(
+        '✅ Token found in \'token\' key: ${token?.substring(0, token.length > 20 ? 20 : token.length)}...',
+      );
     } else if (sharedPreferences.containsKey('access_token')) {
       token = sharedPreferences.getString('access_token');
+      logger.i(
+        '✅ Token found in \'access_token\' key: ${token?.substring(0, token.length > 20 ? 20 : token.length)}...',
+      );
+    } else if (sharedPreferences.containsKey('auth_token')) {
+      token = sharedPreferences.getString('auth_token');
+      logger.i(
+        '✅ Token found in \'auth_token\' key: ${token?.substring(0, token.length > 20 ? 20 : token.length)}...',
+      );
+    } else {
+      logger.w(
+        '⚠️ No token found in any key (token, access_token, auth_token)',
+      );
     }
 
     if (token != null && token.isNotEmpty) {
       // 3. Tambahkan header Authorization jika token tersedia
       options.headers['Authorization'] = 'Bearer $token';
+      logger.i(
+        '✅ Authorization header added: Bearer ${token.substring(0, token.length > 20 ? 20 : token.length)}...',
+      );
+    } else {
+      logger.w('⚠️ No token available to add to Authorization header');
     }
 
     final requestPath = '${options.baseUrl}${options.path}';
-    logger.i('${options.method} request ==> $requestPath');
+    logger.i('${options.method} request => $requestPath');
+    logger.d('Request headers: ${options.headers}');
     return super.onRequest(options, handler);
   }
 

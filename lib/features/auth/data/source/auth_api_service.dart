@@ -90,4 +90,14 @@ class AuthApiService {
       rethrow;
     }
   }
+
+  Future<Response> getMyFaces() async {
+    try {
+      _logger.i('[API] GET ${ApiUrls.baseUrl}/face');
+      return await _client.get('${ApiUrls.baseUrl}/face');
+    } on DioException catch (e) {
+      _logger.e('[API] getMyFaces failed', error: e, stackTrace: e.stackTrace);
+      rethrow;
+    }
+  }
 }

@@ -8,6 +8,7 @@ import '../../../auth/data/source/auth_api_service.dart';
 import '../../../../core/constant/api_urls.dart';
 import 'package:gii_dace_recognition/features/scan_wajah/presentation/pages/start_scan.dart';
 import 'package:gii_dace_recognition/features/auth/presentation/pages/welcome_page.dart';
+import 'package:gii_dace_recognition/features/auth/presentation/pages/my_faces_page.dart';
 import '../../../auth/domain/usecase/logout_usecase.dart';
 import 'package:gii_dace_recognition/common/bloc/auth/auth_cubit.dart';
 // Pastikan path import ini sesuai dengan struktur folder kamu
@@ -219,8 +220,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         ItemProfileWidget(
                           icon: Icons.person_outline,
-                          title: 'Edit Profil',
-                          onTap: () {},
+                          title: 'Lihat Semua Wajah',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const MyFacesPage(),
+                              ),
+                            );
+                          },
                         ),
                         ItemProfileWidget(
                           icon: Icons.location_on_outlined,

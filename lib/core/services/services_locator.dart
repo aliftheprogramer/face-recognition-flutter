@@ -24,6 +24,9 @@ import '../../features/auth/domain/usecase/face_login_bytes_usecase.dart';
 import '../../features/auth/domain/usecase/is_logged_in.dart';
 import '../../features/auth/domain/usecase/is_first_run_usecase.dart';
 import '../../features/auth/domain/usecase/set_first_run_complete_usecase.dart';
+import '../../features/auth/domain/usecase/get_my_faces_usecase.dart';
+import '../../features/auth/domain/repository/face_repository.dart';
+import '../../features/auth/data/repository_impl/face_repository_impl.dart';
 import '../../common/bloc/auth/auth_cubit.dart';
 import '../../features/scan_wajah/data/source/face_recognition_remote_data_source.dart';
 import '../../features/scan_wajah/domain/usecase/register_face_usecase.dart';
@@ -56,6 +59,12 @@ Future<void> setUpServiceLocator() async {
   sl.registerLazySingleton(() => IsLoggedInUseCase(sl()));
   sl.registerLazySingleton(() => IsFirstRunUsecase(sl()));
   sl.registerLazySingleton(() => SetFirstRunCompleteUsecase(sl()));
+
+  // Face repository and use case
+  sl.registerLazySingleton<FaceRepository>(
+    () => FaceRepositoryImpl(api: sl(), logger: sl()),
+  );
+  sl.registerLazySingleton(() => GetMyFacesUseCase(sl()));
 
   // App-level cubits / blocs
   sl.registerLazySingleton(() => AuthStateCubit());
